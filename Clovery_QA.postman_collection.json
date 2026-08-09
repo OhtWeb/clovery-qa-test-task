@@ -1,0 +1,257 @@
+{
+	"info": {
+		"_postman_id": "7e4071f4-9142-459c-9f0f-40480d346d10",
+		"name": "Clovery_QA",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "50450226",
+		"_collection_link": "https://ohtweb-36461.postman.co/workspace/SCAN-Interfax~96736aad-7471-4fdd-9749-7bb43d5acb13/collection/50450226-7e4071f4-9142-459c-9f0f-40480d346d10?action=share&source=collection_link&creator=50450226"
+	},
+	"item": [
+		{
+			"name": "Create Right",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// 1. Извлекаем данные текущей итерации из CSV\r",
+							"const testName = pm.iterationData.get(\"test_name\") || \"Unnamed Test\";\r",
+							"// Приводим статус к числу (из CSV он может прийти строкой \"200\")\r",
+							"const expectedStatus = Number(pm.iterationData.get(\"expected_status\")) || 200;\r",
+							"\r",
+							"// 2. Проверяем HTTP-статуса ответа\r",
+							"pm.test(`[DDT] ${testName} -> Expects HTTP ${expectedStatus}`, function () {\r",
+							"    pm.response.to.have.status(expectedStatus);\r",
+							"});\r",
+							"\r",
+							"// Безопасно парсим JSON-ответ\r",
+							"let responseData;\r",
+							"try {\r",
+							"    responseData = pm.response.json();\r",
+							"} catch (e) {\r",
+							"    console.error(\"Failed to parse JSON response:\", e);\r",
+							"}\r",
+							"\r",
+							"// 3. Выполняем проверки в зависимости от вернувшегося кода\r",
+							"if (responseData) {\r",
+							"    \r",
+							"    // Сценарий 200 OK (Позитивный)\r",
+							"    if (pm.response.code === 200) {\r",
+							"        pm.test(\"Positive Case: Body contains valid object structure\", function () {\r",
+							"            pm.expect(responseData).to.have.property('id');\r",
+							"            pm.expect(responseData).to.have.property('code');\r",
+							"            pm.expect(responseData).to.have.property('description');\r",
+							"            pm.expect(responseData.description).to.have.property('text');\r",
+							"        });\r",
+							"\r",
+							"        // Сохраняем id в коллекцию для дальнейших E2E тестов (GET/PATCH/DELETE)\r",
+							"        if (responseData.id) {\r",
+							"            pm.collectionVariables.set(\"right_id\", responseData.id);\r",
+							"            console.log(\"Saved right_id:\", responseData.id);\r",
+							"        }\r",
+							"    }\r",
+							"    \r",
+							"    // Сценарий 422 Unprocessable Entity (Негативный)\r",
+							"    else if (pm.response.code === 422) {\r",
+							"        pm.test(\"Negative Case: Body contains FastAPI validation 'detail' array\", function () {\r",
+							"            pm.expect(responseData).to.have.property('detail');\r",
+							"            pm.expect(responseData.detail).to.be.an('array');\r",
+							"            pm.expect(responseData.detail.length).to.be.above(0);\r",
+							"        });\r",
+							"    }\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"description\": {\r\n    \"text\": \"{{input_text}}\"\r\n  },\r\n  \"code\": \"{{input_code}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{base_url}/api/rights/{project_id}",
+					"host": [
+						"{base_url}"
+					],
+					"path": [
+						"api",
+						"rights",
+						"{project_id}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Rights",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{base_url}/api/rights/{project_id}",
+					"host": [
+						"{base_url}"
+					],
+					"path": [
+						"api",
+						"rights",
+						"{project_id}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Edit Right",
+			"request": {
+				"method": "PATCH",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"description\": {\r\n    \"text\": \"string\"\r\n  },\r\n  \"code\": \"string\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{base_url}/api/rights/{project_id}/{right_id}",
+					"host": [
+						"{base_url}"
+					],
+					"path": [
+						"api",
+						"rights",
+						"{project_id}",
+						"{right_id}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Right by ID - PATCHED",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Right",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{base_url}/api/rights/{project_id}/{right_id}",
+					"host": [
+						"{base_url}"
+					],
+					"path": [
+						"api",
+						"rights",
+						"{project_id}",
+						"{right_id}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Right by ID - DELETED",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 404\", function () {\r",
+							"    pm.response.to.have.status(404);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{base_url}/api/rights/{project_id}/{right_id}",
+					"host": [
+						"{base_url}"
+					],
+					"path": [
+						"api",
+						"rights",
+						"{project_id}",
+						"{right_id}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": ""
+		},
+		{
+			"key": "project_id",
+			"value": ""
+		},
+		{
+			"key": "right_id",
+			"value": ""
+		},
+		{
+			"key": "input_text",
+			"value": ""
+		},
+		{
+			"key": "input_code",
+			"value": "",
+			"type": "default"
+		}
+	]
+}
